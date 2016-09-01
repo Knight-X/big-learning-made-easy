@@ -23,28 +23,41 @@ ssh.submit
 并在启动的主机上调用命令python  train_mnist.py --kv-store dist_sync。并得到以下环境变量：
 
 		————————————————————————————————————－
-		env {'DMLC_NUM_SERVER': '2', 'TERM': 'xterm', 'LESSCLOSE': '/usr/bin/lesspipe %s %s', 'SHLVL': '1', 'OLDPWD': '/project/mxnet/python', 'HOSTNAME': 'dc278d5190bd', 'LESSOPEN':       '| /usr/bin/lesspipe %s', 'DMLC_ROLE': 'scheduler', 'PWD': '/project/mxnet/example/image-classification', 'DMLC_PS_ROOT_PORT': '9101', 'PATH': '/root/bin:/root/anaconda2/bin:/      root/anaconda2/bin:/root/bin:/root/anaconda2/bin:/root/anaconda2/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin', 'DMLC_NUM_WORKER': '2', 'HOME': '/root', 'LS_COLORS':
+		env {'DMLC_NUM_SERVER': '2', 'TERM': 'xterm', 'LESSCLOSE': '/usr/bin/lesspipe %s %s', 'SHLVL': '1',
+		OLDPWD': '/project/mxnet/python', 'HOSTNAME': 'dc278d5190bd', 'LESSOPEN':       '| /usr/bin/lesspipe %s',
+		'DMLC_ROLE': 'scheduler', 'PWD': '/project/mxnet/example/image-classification', 'DMLC_PS_ROOT_PORT': '9101',
+		'PATH': '/root/bin:/root/anaconda2/bin:/      root/anaconda2/bin:/root/bin:/root/anaconda2/bin:/root/anaconda2/bin:/usr/local/sbin:
+		/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin', 'DMLC_NUM_WORKER': '2', 'HOME': '/root', 'LS_COLORS':
 		————————————————————————————————————－
 
 3.	track.submit 完成本机的设置后，调用ssh.py 中 ssh_submit 函数启动server和worker，在不指定worker的情况下woker和server拥有相同多的数量。在这个例子中server的数量是2， 由－n 2指定。所以在ssh_submit 中将分别在另外的两台机器里分别起启动两个进程，使用以下命令：
 
-		ssh -o StrictHostKeyChecking=no 172.17.0.5 -p 22 'export PATH="/root/anaconda2/bin:$PATH";  echo `env`; export DMLC_ROLE=server; export DMLC_PS_ROOT_PORT=9099; export DMLC_PS_ROOT_URI=172.17.0.3; export DMLC_NUM_SERVER=2; export DMLC_NUM_WORKER=2; cd /tmp/mxnet; python train_mnist.py --kv-store dist_sync'
+		ssh -o StrictHostKeyChecking=no 172.17.0.5 -p 22 'export PATH="/root/anaconda2/bin:$PATH";  echo `env`;
+		export DMLC_ROLE=server; export DMLC_PS_ROOT_PORT=9099; export DMLC_PS_ROOT_URI=172.17.0.3; export DMLC_NUM_SERVER=2;
+		export DMLC_NUM_WORKER=2; cd /tmp/mxnet; python train_mnist.py --kv-store dist_sync'
 
-		ssh -o StrictHostKeyChecking=no 172.17.0.4 -p 22 'export PATH="/root/anaconda2/bin:$PATH";  echo `env`; export DMLC_ROLE=server; export DMLC_PS_ROOT_PORT=9099; export DMLC_PS_ROOT_URI=172.17.0.3; export DMLC_NUM_SERVER=2; export DMLC_NUM_WORKER=2; cd /tmp/mxnet; python train_mnist.py --kv-store dist_sync'
+		ssh -o StrictHostKeyChecking=no 172.17.0.4 -p 22 'export PATH="/root/anaconda2/bin:$PATH";  echo `env`;
+		export DMLC_ROLE=server; export DMLC_PS_ROOT_PORT=9099; export DMLC_PS_ROOT_URI=172.17.0.3; export DMLC_NUM_SERVER=2;
+		export DMLC_NUM_WORKER=2; cd /tmp/mxnet; python train_mnist.py --kv-store dist_sync'
 
 
-		ssh -o StrictHostKeyChecking=no 172.17.0.5 -p 22 'export PATH="/root/anaconda2/bin:$PATH";  echo `env`; export DMLC_ROLE=worker; export DMLC_PS_ROOT_PORT=9099; export DMLC_PS_ROOT_URI=172.17.0.3; export DMLC_NUM_SERVER=2; export DMLC_NUM_WORKER=2; cd /tmp/mxnet; python train_mnist.py --kv-store dist_sync'
+		ssh -o StrictHostKeyChecking=no 172.17.0.5 -p 22 'export PATH="/root/anaconda2/bin:$PATH";  echo `env`;
+		export DMLC_ROLE=worker; export DMLC_PS_ROOT_PORT=9099; export DMLC_PS_ROOT_URI=172.17.0.3; export DMLC_NUM_SERVER=2;
+		export DMLC_NUM_WORKER=2; cd /tmp/mxnet; python train_mnist.py --kv-store dist_sync'
 
 
-		ssh -o StrictHostKeyChecking=no 172.17.0.5 -p 22 'export PATH="/root/anaconda2/bin:$PATH";  echo `env`; export DMLC_ROLE=worker; export DMLC_PS_ROOT_PORT=9099; export DMLC_PS_ROOT_URI=172.17.0.3; export DMLC_NUM_SERVER=2; export DMLC_NUM_WORKER=2; cd /tmp/mxnet; python train_mnist.py --kv-store dist_sync'
+		ssh -o StrictHostKeyChecking=no 172.17.0.5 -p 22 'export PATH="/root/anaconda2/bin:$PATH";  echo `env`;
+		export DMLC_ROLE=worker; export DMLC_PS_ROOT_PORT=9099; export DMLC_PS_ROOT_URI=172.17.0.3; export DMLC_NUM_SERVER=2;
+		export DMLC_NUM_WORKER=2; cd /tmp/mxnet; python train_mnist.py --kv-store dist_sync'
 
 
 
 ##启动PS,计算任务##
 自此已完成启动，控制权交给train_mnist.py.
-
 train_mnist.py 获得以下参数：
-		Namespace(batch_size=128, data_dir='mnist/', gpus=None, kv_store='dist_sync', load_epoch=None, lr=0.1, lr_factor=1, lr_factor_epoch=1, model_prefix=None, network='mlp', num_epochs=10, num_examples=60000, save_model_prefix=None)。
+
+		Namespace(batch_size=128, data_dir='mnist/', gpus=None, kv_store='dist_sync', load_epoch=None, lr=0.1, lr_factor=1,
+		lr_factor_epoch=1, model_prefix=None, network='mlp', num_epochs=10, num_examples=60000, save_model_prefix=None)。
 
 
 train_mnist.py 调用train_model.fit(args, net,get_iterator(data_shape))，args就是上面列出的参数，net就是我们的网络symbol。get_iterator是读取数据的函数，在这个函数里面有一个神奇的函数，我一直没有找到这个函数的定义mx.io.MNISTIter, 运行也不报错。
@@ -93,6 +106,7 @@ KVStroeDist 在 mxnet/src/kvstore/kvstore_dist.h 定义， 里面会去调用IsW
 		763             kvstore, len(self.ctx), self.arg_params)
 
 这个地方没有完全看明白。在model.fit 中调用了 _train_multi_device这事真正做训练的地方。
+
 		184     executor_manager = DataParallelExecutorManager(symbol=symbol,
 		185                                                    sym_gen=sym_gen,
 		186                                                    ctx=ctx,
@@ -102,7 +116,9 @@ KVStroeDist 在 mxnet/src/kvstore/kvstore_dist.h 定义， 里面会去调用IsW
 		190                                                    aux_names=aux_names,
 		191                                                    work_load_list=work_load_list,
 		192                                                    logger=logger
+
 在得到executor_manager，就可以做，FB，BP
+
 		229                 executor_manager.forward(is_train=True)
 		230                 executor_manager.backward()
 
