@@ -62,7 +62,7 @@ root@172.17.0.8上的启动命令是：
 	[root@172.17.0.8] run: cd /home/paddle/JOB20160831115853; GLOG_logtostderr=0 GLOG_log_dir="./log" nohup paddle pserver  --num_gradient_servers=2 --nics=eth0 --port=7164 --ports_num=2 --ports_num_for_sparse=2 --comment=paddle_process_by_paddle > ./log/server.log 2>&1 < /dev/null &
 	[root@172.17.0.8] run: cd /home/paddle/JOB20160831115853; GLOG_logtostderr=0 GLOG_log_dir="./log" nohup paddle train  --num_gradient_servers=2 --nics=eth0 --port=7164 --ports_num=2 --comment=paddle_process_by_paddle --pservers=172.17.0.7,172.17.0.8  --ports_num_for_sparse=2 --config=./trainer_config.py --trainer_count=4 --use_gpu=0 --num_passes=10 --save_dir=./output --log_period=50 --dot_period=10 --saving_period=1 --local=0 --trainer_id=1 > ./log/train.log 2>&1 < /dev/null &
 
-![](./paddle.jpg)
+![](images/paddle.jpg)
 
 Paddle的架构如上图所示，paddle在每台节点启动PServer和Trainer的两个进程。
 ### PServer进程 ###
@@ -94,7 +94,7 @@ SocketWorker类有2个成员变量，channel负责网络收发，server负责处
 	at /root/paddle/paddle/gserver/gradientmachines/MultiGradientMachine.cpp:357
 	#4  0x0000000000618a3e in paddle::MultiGradientMachine::forwardBackward()
 	at /root/paddle/paddle/gserver/gradientmachines/MultiGradientMachine.cpp:291
-	#5  0x000000000066205c in paddle::TrainerInternal::forwardBackwardBatch() 
+	#5  0x000000000066205c in paddle::TrainerInternal::forwardBackwardBatch()
 	at /root/paddle/paddle/trainer/TrainerInternal.cpp:299
 	#6  0x0000000000662ab7 in paddle::TrainerInternal::trainOneBatch ()
 	at /root/paddle/paddle/trainer/TrainerInternal.cpp:117
@@ -115,7 +115,7 @@ TrainerThread负责真正的计算，主线程通过getOutArgs()等待计算结�
 
 RemoteParameterUpdater类和SparseRemoteParameterUpdater类中创建ParameterClient2类负责网络收发。
 
-![](./parameterClient.jpg)
+![](images/parameterClient.jpg)
 
 BaseClient类中启动一组接收线程，接收队列，发送线程，发送队列，数量等于实际PServer数量。
 
@@ -141,4 +141,4 @@ SgdThreadUpdater，SgdLocalUpdater，SgdUpdaterWithCpuAverager是local的Paramet
 trainerInternal_.getParameterUpdater()->init(parameters);
 
 
-![](./parameterUpdater.jpg)
+![](images/parameterUpdater.jpg)
