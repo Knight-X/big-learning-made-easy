@@ -75,7 +75,17 @@ PServer进程：入口paddle/pserver/ParameterServer2Main.cpp
 
 例子中ports_num + ports_num_for_sparse=4
 
-ParameterServer2类继承ProtoServer类继承SocketServer。并在paddle/pserver/LightNetwork.cpp:191 SocketServer::tcpServer会启动tcpserver，接收客户端连接，每个连接创建SocketWorker线程类。SocketWorker类中接收数据，处理参数pull和push请求。
+![](images/pserver.jpg)
+
+ParameterServer2类继承ProtoServer类继承SocketServer。并在paddle/pserver/LightNetwork.cpp:191 SocketServer::tcpServer会启动tcpserver，接收客户端连接，每个连接创建SocketWorker线程类。SocketWorker类中的channe负责网络收发，并调用handleRequest()处理请求，handleRequest中根据请求的funcName调用相应的函数。主要函数入口有ParameterServer2类的sendParameter()和doOperation()。sendParameter()的作用是处理非同步的请求，如SET_PARAM，GET_PARAM，ASYNC_SGD，ADD_GRADIENT，AVERAGE_PARAMETER。doOperation()的主要作用是处理sync-sgd。
+
+sync-sgd时，客户端通过controller线程发送op_SGD 命令到PServer，然后立即发送sendParameter请求，PServer端通过doOperation()和sendParameter()调用完成sync-sgd的梯度合并和优化。
+
+          | 区别
+--------- | -------------
+sync-sgd  | Client通过controller和所有pservers建立连接，传输数据需要barrier同步，发送和merge梯度都是以block为单位，节省网络开销
+async-sgd | Client不同pservers的连接不需要barrier同步，梯度立即发送
+
 
 SocketWorker类有2个成员变量，channel负责网络收发，server负责处理请求。
 
@@ -140,5 +150,16 @@ SgdThreadUpdater，SgdLocalUpdater，SgdUpdaterWithCpuAverager是local的Paramet
 在Trainer::init paddle/trainer/Trainer.cpp:240中，初始化ParameterUpdater，
 trainerInternal_.getParameterUpdater()->init(parameters);
 
+Local的ParameterUpdater类在forward()前调用startBatch()，在backward后调用finishBatch()，在forward()和backward()中会多次调用update()更新weight。ParameterUpdater类的startBatch()， finishBatch()，update()主要调用ParameterOptimizer的同名函数。
+
+Remote的ParameterUpdater类主要区别在于finishBatch()中会跟PServer更新参数。
+
+SparseRemoteParameterUpdater所有参数都在PServer端，所以不需要localUpdater_，它的updateImpl实现是空的。在forward()前要从PServer拉weight,每次只拉需要的部分，所以参数可以非常大。在finishBatch()中，调用sendAndReceiveParameter发送delta到PServer，并拉取最新的参数。controller()线程函数中通过PSERVER_OP_START_PASS，PSERVER_OP_SGD，PSERVER_OP_FINISH_PASS操作命令在服务器端更新参数。
+
+ConcurrentRemoteParameterUpdater在RemoteParameterUpdater基础上加了一个优化：
+
+	pipeline device-to-host copy and host-to-network to hide network latency in backward stage.
+
+并且在不同的线程里面发送和接收。参数可以在本地也可以在PServer端，如果在本地通过localUpdater_更新，如果在PServer端通过controllerThread_更新(猜的，不知道对不对？)
 
 ![](images/parameterUpdater.jpg)
