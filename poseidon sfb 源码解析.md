@@ -39,3 +39,5 @@ ThreadSyncWithSVB中，把某个layer的local_sv_queue和remote_sv_queue合并�
 图中SV Computing Thread 对应的自然是执行Solver<Dtype>::ForwardBackward的线程
 
 在Context::InitSVB中初始化local_sv_queues_和remote_sv_queues_时，local_sv_queues_中SufficientVectorQueue允许读取num_app_thread + 1次，remote_sv_queues_允许读取num_app_thread次，读满这么多次才会pop
+
+如果使用SFB，就是p2p架构，不会使用Parameter Server
