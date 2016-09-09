@@ -116,7 +116,7 @@ petuum::PSTableGroup::Init(table_group_config, false)
 角色是PS中的Client，负责管理真正计算的worker threads，并与server thread通信。在每个node上，bg threads可以有多个，其中一个负责建立本地 table。
 
 ## 代码结构与流程
-![init](figures/PSTableGroup-Init().png)
+![init](images/PSTableGroup-Init().png)
 
 
 ## Local 模式线程启动分析
