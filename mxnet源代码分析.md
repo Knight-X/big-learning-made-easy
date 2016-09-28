@@ -6,7 +6,8 @@
 
 ## symbol的建立过程
 train_mnist.py中使用符号式编程对网络进行了定义，函数get_mlp和get_lenet分别定义了两个网络一个是普通的多层网络，一个是带卷积的网络。以下是get_lenet的代码：
-    '''
+
+    '''python
 	def get_lenet(add_stn=false):
     	"""
     	lecun, yann, leon bottou, yoshua bengio, and patrick
