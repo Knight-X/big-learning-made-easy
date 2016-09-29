@@ -81,98 +81,59 @@ class Symbol {
     * This head is only effective when
     */
    std::vector<DataEntry> heads_;
+
 }
+
+symbol.cc
+
+ /*!
+  * \brief Node is represents node of an operator in the symbolic graph.
+  *
+  * It stores connection to the inputs to function represented by OperatorProperty
+  * NOTE on data structure: there are three types of node:
+  * - Normal node: contains all the necessary elements of a graph.
+  * - OperatorProperty: the inputs_ is empty, represents an OperatorProperty that has not been applied.
+  * - Variable: the sym_ is nullptr, represents an named Variable of tensors that can be composed.
+  */
+ struct Symbol::Node {
+   /*! \brief Operator of this node */
+   std::unique_ptr<OperatorProperty> op;
+   /*! \brief name of the node */
+   std::string name;
+   /*! \brief inputs to this node */
+   std::vector<DataEntry> inputs;
+   /*! \brief source node of the current node */
+   std::shared_ptr<Symbol::Node> backward_source_node;
+   /*!
+    * \brief additional attributes about the node,
+    *  Use pointer to save space, as attr can be accessed in a slow way,
+    *  not every node will have attributes.
+    */
+   std::unique_ptr<std::map<std::string, std::string> > attr;
+   /*!
+     *\brief constructor
+     *\param op the OperatorProperty to construct the Node
+     *\param name the name of the symbol
+    */
+   explicit Node(OperatorProperty *op,
+                 const std::string& name)
+       : op(op), name(name) {}
+   /*!
+     *\brief copy constructor constructor
+    */
+   explicit Node(const Node& other)
+       : name(other.name) {
+     if (other.op != nullptr) {
+       op.reset(other.op->Copy());
+     }
+
 ```
 
 createVariable 只是创建了一个空的node，并把名字付给了一个DataEntry并把它push进vector。这也就是符号编程的特点，定义的时候只是做了形的定义，并没有直接关联上具体的数据。
 
 	> note c_api.cc 是python调用c++的一个入口。
 
-Node被定义在static_graph.h 中的StaticGraph类中, StaticGraph是Symbol的友类。
-
-```c++
- class StaticGraph {
-  public:
-   /*! \brief represents a data in the graph */
-   struct DataEntry {
-     /*! \brief the source node id in the computation graph */
-     uint32_t source_id;
-     /*! \brief index of output from the source. */
-     uint32_t index;
-     /*! \brief default constructor */
-
-    ...
-    }
-
-
-    ...
-
-	   /*!
-    * \brief Operation Node in static graphs.
-    *  There are two types of node, Forward and Backward Node.
-    *
-    *  - Forward node corresponds to the op.Forward
-    *  - Backward node corresponds to the Backward pass,
-    *    where the corresponding forward node is indicated by backward_source_id.
-    *    The op field in Backward node is nullptr
-    *
-    *  The reason we explicit support Backward node is to allow special treatment
-    *  such as shape inference and state sharing with Forward pass.
-    */
-   struct Node {
-     /*! \brief wrapped operator property */
-     std::unique_ptr<OperatorProperty> op;
-     /*! \brief name of the node */
-     std::string name;
-     /*! \brief inputs (node_id, index) for of the nodes*/
-     std::vector<DataEntry> inputs;
-     /*!
-      * \brief If this field is nonnegative, this indicates this
-      *  Node is corresponds to a Backward Operation of Operator.
-      *  backward_source_id will points to the corresponding Forward Node.
-      *
-      *  For normal node, this field is -1.
-      *  When the node is a Backward node, the op field will be nullptr
-      */
-     int32_t backward_source_id;
-     /*! \brief additional attributes about the node */
-     std::map<std::string, std::string> attr;
-     /*!
-      * \brief Data structure to enable add-to operations in the node.
-      *  Use to enable memory efficient gradient sum aggregation.
-      *  Normally this array is empty.
-      *
-      *  Let n = inputs.size() - addto_index_.size();
-      *    the output of the node is defined as:
-      *  - out[j] = op(input[0:n]) for j not in addto_index_
-      *  - out[addto_index_[i]] = op(input[0:n]) + inputs[n + i]
-      */
-     std::vector<uint32_t> addto_index;
-     /*! \brief default constructor */
-     Node() : backward_source_id(-1) {}
-
-		...
-
-	}
-
-		...
-
-	/*! \brief all nodes in the graph */
-   	std::vector<Node> nodes;
-   	/*! \brief index of nodes that correspods to arguments */
-   	std::vector<uint32_t> arg_nodes;
-   	/*! \brief heads outputs of the graph */
-   	std::vector<DataEntry> heads;
-
-		...
- }
-
-```
-
-有两类Node，一类是Forword, 一类是Backword以backward_source_id是否为－1来判断。
-从以上的结构得知symbol创建一个variable 就在push了一个空Node到Symbol的DataEntry的vector。
-
-现在回到train_mnist.py的get_lenet函数中。继续执行`conv1 = mx.symbol.Convolution(data=data, kernel=(5,5), num_filter=20)`，Convolution函数在Symbol.py中没有定义，所以接下来看一下Convolution函数从何而来。
+现在回到`train_mnist.py`的`get_lenet`函数中。继续执行`conv1 = mx.symbol.Convolution(data=data, kernel=(5,5), num_filter=20)`，Convolution函数在Symbol.py中没有定义，所以接下来看一下Convolution函数从何而来。
 
 为了讲清楚这个问题又需要引入一些定义。
 在src/operator/convolution.cc中有两个宏，
