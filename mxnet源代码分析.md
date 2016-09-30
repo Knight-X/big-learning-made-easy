@@ -430,7 +430,7 @@ Symbol Symbol::Create(OperatorProperty *op)  {
    return s;
  }
 ```
-使用op初始化一个Node，并将根据`op->NumvisibleOutputs()`的输出的数量生成DataEntry，并push到`heads_`。至此完成了Symbol和Operator的关系，python数据和到c++的调用，以及python函数在runtime的注册。
+使用op初始化一个Node，并将根据`op->NumvisibleOutputs()`的输出的数量生成DataEntry，并push到`heads_`。至此完成了Symbol和Operator的关联，python数据和到c++的调用，以及python函数在runtime的注册。
 
 回到create函数中，继续调用`s._compose(*args, name=name, **symbol_kwargs)`,完成于之前符号的链接，就是在创建符号时参数中传进来的符号。
 通过`_compose`, `_LIB.MXSymbolCompose`, 进入Symbol的compose。
